@@ -19,13 +19,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Diagnose PAT scopes
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          echo "token prefix: ${GH_PAT:0:4}"
-          curl -sI -H "Authorization: Bearer ${GH_PAT}" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/user | grep -i -E 'x-oauth-scopes|x-accepted-oauth-scopes'
       - name: Merge upstream
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
@@ -34,9 +27,8 @@ jobs:
           git fetch upstream
           git checkout main
           git merge upstream/main --no-edit
-          # Neutralize any checkout-injected GITHUB_TOKEN header.
-          # `|| true`: git exits 5 if the key is absent — don't abort on it.
-          git config --unset-all http.https://github.com/.extraheader 2>/dev/null || true
-          # Point origin at the PAT and force ONLY URL credentials past checkout's helper.
+          echo "=== credential config by scope ==="
+          git config --list --show-origin | grep -iE 'extraheader|credential\.helper|insteadof' || echo "(none)"
           git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/remkolems/k8s-schemas.git"
-          git -c credential.helper= push origin main
+          # -c overrides extraheader/helper at every config scope for this push
+          git -c http.https://github.com/.extraheader= -c credential.helper= push origin main
