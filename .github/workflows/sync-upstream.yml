@@ -23,6 +23,7 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          test -n "${GH_PAT}" || { echo "::error::GH_PAT secret is empty/missing — check the secret name"; exit 1; }
           git remote add upstream https://github.com/home-operations/k8s-schemas.git
           git fetch upstream
           git checkout main
