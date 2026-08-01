@@ -27,8 +27,9 @@ jobs:
           git fetch upstream
           git checkout main
           git merge upstream/main --no-edit
-          # actions/checkout injects its GITHUB_TOKEN as an extraheader that
-          # overrides URL credentials — remove it so the PAT is actually used.
-          git config --unset-all http.https://github.com/.extraheader
+          # Neutralize any checkout-injected GITHUB_TOKEN header.
+          # `|| true`: git exits 5 if the key is absent — don't abort on it.
+          git config --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+          # Point origin at the PAT and force ONLY URL credentials past checkout's helper.
           git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/remkolems/k8s-schemas.git"
-          git push origin main
+          git -c credential.helper= push origin main
